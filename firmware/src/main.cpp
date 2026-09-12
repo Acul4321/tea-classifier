@@ -3,6 +3,7 @@
 #include <../lib/SH41/7semi_SHT4x.h>
 #include <../lib/SGP41/7Semi_SGP4x.h>
 #include <../lib/AS7341/Adafruit_AS7341.h>
+#include <../lib/CJMCU-6814/CJMCU6814.h>
 
 SHT4x_7semi SHT41;
 
@@ -15,6 +16,8 @@ constexpr float SEA_LEVEL_PRESSURE_HPA = 1013.25f;
 bool bme688ReadingPending = false;
 uint32_t bme688ReadingEnd = 0;
 uint32_t lastBme688Measurement = 0;
+
+CJMCU6814 gasSensor;
 
 // helper function to scan devices on the I2C bus
 void scanI2C() {
@@ -40,18 +43,17 @@ void setup() {
   scanI2C();
 
   // ------------ BME688 sensor init ------------
+  // if (!BME688.begin(0x77)) {
+  //   Serial.println("BME688 not detected");
+  //   while (1);
+  // } 
+  // Serial.println("BME688 initialized successfully!");
 
-  if (!BME688.begin(0x77)) {
-    Serial.println("BME688 not detected");
-    while (1);
-  } 
-  Serial.println("BME688 initialized successfully!");
-
-  BME688.setTemperatureOversampling(BME680_OS_8X);
-  BME688.setHumidityOversampling(BME680_OS_2X);
-  BME688.setPressureOversampling(BME680_OS_4X);
-  BME688.setIIRFilterSize(BME680_FILTER_SIZE_3);
-  BME688.setGasHeater(320, 150);
+  // BME688.setTemperatureOversampling(BME680_OS_8X);
+  // BME688.setHumidityOversampling(BME680_OS_2X);
+  // BME688.setPressureOversampling(BME680_OS_4X);
+  // BME688.setIIRFilterSize(BME680_FILTER_SIZE_3);
+  // BME688.setGasHeater(320, 150);
 
   // ------------ SGP41 sensor init ------------
   // if (!SGP41.begin())
@@ -102,45 +104,48 @@ void setup() {
 //   } else {
 //     Serial.println("Failed to configure AS7341 LED");
 //   }
+
+  // ------------ CJMCU-6814 sensor init ------------
+  gasSensor.begin();
 }
 
 void loop() {
 
   // ------------ BME688 sensor reading ------------
-  if (bme688ReadingPending) {
-    if (millis() >= bme688ReadingEnd) {
-      if (BME688.endReading()) {
-        Serial.println("BME688 readings:");
-        Serial.print("Temperature: ");
-        Serial.print(BME688.temperature, 2);
-        Serial.println(" C");
-        Serial.print("Pressure: ");
-        Serial.print(BME688.pressure / 100.0f, 2);
-        Serial.println(" hPa");
-        Serial.print("Humidity: ");
-        Serial.print(BME688.humidity, 2);
-        Serial.println(" %RH");
-        Serial.print("Gas resistance: ");
-        Serial.print(BME688.gas_resistance / 1000.0f, 2);
-        Serial.println(" kOhm");
-        Serial.print("Approximate altitude: ");
-        Serial.print(BME688.readAltitude(SEA_LEVEL_PRESSURE_HPA), 2);
-        Serial.println(" m");
-      } else {
-        Serial.println("BME688: failed to complete reading");
-      }
-      bme688ReadingPending = false;
-      lastBme688Measurement = millis();
-    }
-  } else if (millis() - lastBme688Measurement >= 2000) {
-    bme688ReadingEnd = BME688.beginReading();
-    if (bme688ReadingEnd != 0) {
-      bme688ReadingPending = true;
-    } else {
-      Serial.println("BME688: failed to start reading");
-      lastBme688Measurement = millis();
-    }
-  }
+  // if (bme688ReadingPending) {
+  //   if (millis() >= bme688ReadingEnd) {
+  //     if (BME688.endReading()) {
+  //       Serial.println("BME688 readings:");
+  //       Serial.print("Temperature: ");
+  //       Serial.print(BME688.temperature, 2);
+  //       Serial.println(" C");
+  //       Serial.print("Pressure: ");
+  //       Serial.print(BME688.pressure / 100.0f, 2);
+  //       Serial.println(" hPa");
+  //       Serial.print("Humidity: ");
+  //       Serial.print(BME688.humidity, 2);
+  //       Serial.println(" %RH");
+  //       Serial.print("Gas resistance: ");
+  //       Serial.print(BME688.gas_resistance / 1000.0f, 2);
+  //       Serial.println(" kOhm");
+  //       Serial.print("Approximate altitude: ");
+  //       Serial.print(BME688.readAltitude(SEA_LEVEL_PRESSURE_HPA), 2);
+  //       Serial.println(" m");
+  //     } else {
+  //       Serial.println("BME688: failed to complete reading");
+  //     }
+  //     bme688ReadingPending = false;
+  //     lastBme688Measurement = millis();
+  //   }
+  // } else if (millis() - lastBme688Measurement >= 2000) {
+  //   bme688ReadingEnd = BME688.beginReading();
+  //   if (bme688ReadingEnd != 0) {
+  //     bme688ReadingPending = true;
+  //   } else {
+  //     Serial.println("BME688: failed to start reading");
+  //     lastBme688Measurement = millis();
+  //   }
+  // }
   
 
   // ------------ SGP41 sensor reading ------------
@@ -196,6 +201,11 @@ void loop() {
   // } else {
   //   Serial.println("AS7341: Failed to read spectral channels.");
   // }
+
+  // ------------ CJMCU-6814 sensor reading ------------
+  float co, nh3, no2;
+  gasSensor.readGases(co, nh3, no2);
+  Serial.printf("CO: %.2f ppm\t | NH3: %.2f ppm\t | NO2: %.2f ppm\n", co, nh3, no2);
 
   delay(1000);
 }
