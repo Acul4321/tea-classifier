@@ -4,7 +4,7 @@
 #include <../lib/SH41/7semi_SHT4x.h>
 #include <../lib/SGP41/7Semi_SGP4x.h>
 #include <../lib/AS7341/Adafruit_AS7341.h>
-#include <../lib/CJMCU-6814/CJMCU6814.h>
+#include <components/CJMCU-6814/CJMCU6814.h>
 
 extern SHT4x_7semi SHT41;
 extern SGP4x_7Semi SGP41;
