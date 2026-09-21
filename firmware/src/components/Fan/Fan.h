@@ -12,6 +12,7 @@ public:
   void on();
   void off();
   void update();
+  bool isOn() const;
 
 private:
   uint8_t pin_;

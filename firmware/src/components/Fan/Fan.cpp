@@ -47,3 +47,7 @@ void Fan::update() {
     off();
   }
 }
+
+bool Fan::isOn() const {
+  return isOn_;
+}
